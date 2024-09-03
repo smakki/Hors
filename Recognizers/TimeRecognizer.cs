@@ -9,7 +9,7 @@ namespace Hors.Recognizers
     {
         protected override string GetRegexPattern()
         {
-            return "([rvgd])?([fot])?(Q|H)?(h|(0)(h)?)((0)e?)?([rvgd])?"; // (в/с/до) (половину/четверть) час/9 (часов) (30 (минут)) (утра/дня/вечера/ночи)
+            return "([rvgd])?([fot])?(Q|H)?(h|(0)(h)?|(uh))((0)e?)?([rvgd])?"; // (в/с/до) (половину/четверть) час/9 (часов) (30 (минут)) (утра/дня/вечера/ночи)
         }
 
         protected override bool ParseMatch(DatesRawData data, Match match, DateTime userDate)
@@ -23,11 +23,11 @@ namespace Hors.Recognizers
                 || match.Groups[9].Success // то же самое в конце
             )
             {
-                if (!match.Groups[5].Success)
+                if (!match.Groups[5].Success && !match.Groups[7].Success)
                 {
                     // no number in phrase
-                    var partOfDay = match.Groups[9].Success 
-                        ? match.Groups[9].Value 
+                    var partOfDay = match.Groups[10].Success 
+                        ? match.Groups[10].Value 
                         : match.Groups[1].Success 
                             ? match.Groups[1].Value 
                             : "";
@@ -45,9 +45,9 @@ namespace Hors.Recognizers
                 {
                     // try minutes
                     var minutes = 0;
-                    if (match.Groups[8].Success)
+                    if (match.Groups[9].Success)
                     {
-                        var m = int.Parse(data.Tokens[match.Groups[8].Index].Value);
+                        var m = int.Parse(data.Tokens[match.Groups[9].Index].Value);
                         if (m >= 0 && m <= 59) minutes = m;
                     }
                     else if (match.Groups[3].Success && hours > 0)
@@ -64,6 +64,14 @@ namespace Hors.Recognizers
                                 break;
                         }
                     }
+                    else if (match.Groups[7].Success)
+                    {
+                        if (match.Groups[7].Value == "uh")
+                        {
+                            hours = userDate.Hour;
+                            minutes = userDate.Minute;
+                        }
+                    }
 
                     // create time
                     var date = new AbstractPeriod();
@@ -74,10 +82,10 @@ namespace Hors.Recognizers
                     if (hours <= 12)
                     {
                         var part = "d"; // default
-                        if (match.Groups[9].Success || match.Groups[1].Success)
+                        if (match.Groups[10].Success || match.Groups[1].Success)
                         {
                             // part of day
-                            part = match.Groups[1].Success ? match.Groups[1].Value : match.Groups[9].Value;
+                            part = match.Groups[1].Success ? match.Groups[1].Value : match.Groups[10].Value;
                             date.Fix(FixPeriod.Time);
                         }
                         else

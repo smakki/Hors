@@ -513,5 +513,43 @@ namespace Hors.Tests
             Assert.AreEqual(14, date.DateFrom.Day);
             Assert.AreEqual(14, date.DateTo.Day);
         }
+
+        [Test]
+        public void ThroughHours()
+        {
+            var parser = new HorsTextParser();
+            var result = parser.Parse("через 4 часа", new DateTime(2024, 9, 2, 17, 00, 00));
+
+            Assert.AreEqual(1, result.Dates.Count);
+            var date = result.Dates.First();
+
+            Assert.AreEqual(DateTimeTokenType.SpanForward, date.Type);
+            Assert.AreEqual(2, date.DateFrom.Day);
+            Assert.AreEqual(21, date.DateFrom.Hour);
+        }
+
+        [Test]
+        public void SameHour()
+        {
+            var parser = new HorsTextParser();
+            var strings = new[]
+{
+                "завтра текущий час",
+                "завтра в текущий час",
+                "завтра в этот час"
+            };
+            foreach (var str in strings)
+            {
+                var result = parser.Parse(str, new DateTime(2024, 9, 2, 17, 00, 00));
+
+                Assert.AreEqual(1, result.Dates.Count);
+                var date = result.Dates.First();
+
+                //Assert.AreEqual(DateTimeTokenType.SpanForward, date.Type);
+                Assert.AreEqual(3, date.DateFrom.Day);
+                Assert.AreEqual(17, date.DateFrom.Hour);
+            }
+            
+        }
     }
 }
